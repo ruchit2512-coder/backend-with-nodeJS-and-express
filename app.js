@@ -34,10 +34,18 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 // app.use(cookieParser('12345-67890-09876-54321'));
 
-function auth(req,res,next){
-  console.log(req.signedCookies);
+app.use(session({
+  name: 'session-id',
+  secret: '12345-67890-09876-54321',
+  saveUninitialized: false,
+  resave: false,
+  store: new FileStore()
+}));
 
-  if(!req.signedCookies.user){
+function auth(req,res,next){
+  console.log(req.session);
+
+  if(!req.session.user){
     var authHeader = req.headers.authorization;
   if(!authHeader){
     var err = new Error("you are not authorized");
@@ -52,7 +60,7 @@ function auth(req,res,next){
   var password = auth[1];
 
   if(userName==='admin'&&password==='password'){
-    res.cookie('user','admin',{signed:true})
+    req.session.user='admin';
     next();
   }
   else{
@@ -65,8 +73,9 @@ function auth(req,res,next){
   }
 
   else{
-    if(req.signedCookies.user==='admin'){
-      next()
+    if(req.session.user==='admin'){
+      console.log('req.session: ',req.session);
+      next();
     }
     else{
       var err = new Error("you are not authorized");
